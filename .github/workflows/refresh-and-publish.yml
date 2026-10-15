@@ -1,0 +1,51 @@
+name: Refresh official catalog and publish site
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 4 * * *"
+  push:
+    paths:
+      - ".github/workflows/refresh-and-publish.yml"
+      - "index.html"
+      - "ingest_catalog.py"
+      - "privacy-policy.html"
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  refresh-and-publish:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Refresh official Isha metadata index
+        run: python ingest_catalog.py
+      - name: Prepare public site files
+        run: |
+          mkdir -p site
+          cp index.html catalog.json privacy-policy.html site/
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: Publish site
+        id: deployment
+        uses: actions/deploy-pages@v4
+
