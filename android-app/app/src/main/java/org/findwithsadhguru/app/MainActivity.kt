@@ -317,6 +317,21 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
                                     Text("Only links to public official pages are indexed. Media stays with its publisher.", color = Muted, fontSize = 11.sp, modifier = Modifier.padding(top = 16.dp))
+                                    Text(
+                                        "Independent app · not affiliated with Sadhguru or Isha Foundation",
+                                        color = Muted,
+                                        fontSize = 11.sp,
+                                        modifier = Modifier.padding(top = 8.dp),
+                                    )
+                                    Text(
+                                        "Privacy policy",
+                                        color = Forest,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        modifier = Modifier.clickable {
+                                            openPublicSource("https://sunmoonpanigrahi.github.io/shoonya/privacy-policy.html")
+                                        }.padding(top = 8.dp),
+                                    )
                                 }
                             }
                         }
@@ -343,7 +358,7 @@ class MainActivity : ComponentActivity() {
         val uri = Uri.parse(url)
         val allowed = uri.scheme == "https" && uri.host in setOf(
             "isha.sadhguru.org", "www.youtube.com", "www.instagram.com", "www.facebook.com",
-            "www.linkedin.com", "x.com",
+            "www.linkedin.com", "x.com", "sunmoonpanigrahi.github.io",
         )
         if (!allowed) return
         runCatching { startActivity(Intent(Intent.ACTION_VIEW, uri)) }
