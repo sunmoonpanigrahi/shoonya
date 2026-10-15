@@ -1,0 +1,51 @@
+name: Build Android app
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "android-app/**"
+      - ".github/workflows/build-android.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.13"
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Install Android 16 SDK
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Build preview APK and release bundle
+        working-directory: android-app
+        run: |
+          if [[ "$GITHUB_REPOSITORY" == "$GITHUB_REPOSITORY_OWNER/$GITHUB_REPOSITORY_OWNER.github.io" ]]; then
+            catalog_url="https://${GITHUB_REPOSITORY_OWNER}.github.io/catalog.json"
+          else
+            repository_name="${GITHUB_REPOSITORY#*/}"
+            catalog_url="https://${GITHUB_REPOSITORY_OWNER}.github.io/${repository_name}/catalog.json"
+          fi
+          gradle :app:assembleDebug :app:bundleRelease -PCATALOG_URL="$catalog_url"
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: find-with-sadhguru-android
+          path: |
+            android-app/app/build/outputs/apk/debug/app-debug.apk
+            android-app/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 14
+
