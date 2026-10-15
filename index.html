@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f4ee">
+  <meta name="description" content="Find Sadhguru's public videos, articles and audio from official Isha sources.">
+  <title>Find with Sadhguru</title>
+  <style>
+    :root { color-scheme: light; --ink:#20251f; --muted:#667067; --line:#e5e4dc; --paper:#fbfaf7; --green:#325b47; --lime:#dce9bb; --orange:#bc613e; }
+    * { box-sizing:border-box }
+    body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif }
+    a { color:inherit }
+    .shell { max-width:1120px; margin:auto; padding:0 28px }
+    header { height:78px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line) }
+    .brand { display:flex; align-items:center; gap:11px; font-weight:700; letter-spacing:-.03em }
+    .mark { width:34px; height:34px; border-radius:50%; background:var(--green); color:#fff; display:grid; place-items:center; font-family:Georgia,serif; font-size:18px }
+    .official { color:var(--muted); font-size:13px; display:flex; gap:8px; align-items:center }
+    .official:before { content:""; width:7px; height:7px; background:#668b56; border-radius:50% }
+    main { padding-bottom:80px }
+    .hero { max-width:790px; margin:76px auto 0; text-align:center }
+    .eyebrow { color:var(--green); text-transform:uppercase; letter-spacing:.16em; font-weight:700; font-size:11px }
+    h1 { font-family:Georgia,"Times New Roman",serif; font-weight:400; font-size:clamp(42px,7vw,68px); letter-spacing:-.055em; line-height:1.02; margin:16px 0 18px }
+    .intro { color:var(--muted); font-size:17px; margin:0 auto 30px; max-width:570px }
+    .search { height:68px; display:flex; align-items:center; gap:12px; padding:8px 10px 8px 20px; background:white; border:1px solid #dcddd5; border-radius:15px; box-shadow:0 8px 26px #2734260c; text-align:left }
+    .search svg { flex:none; color:#778077 }
+    .search input { border:0; outline:0; background:transparent; width:100%; font:inherit; color:var(--ink); font-size:16px }
+    .search input::placeholder { color:#92988f }
+    .voice { width:46px; height:46px; display:grid; place-items:center; background:#f3f4ef; border:0; border-radius:11px; color:var(--green); cursor:pointer; flex:none }
+    .voice:hover,.voice.listening { background:var(--lime) }
+    .voice.listening { animation:pulse 1.2s infinite }
+    @keyframes pulse { 50% { box-shadow:0 0 0 7px #dce9bb80 } }
+    .search-btn { height:48px; padding:0 21px; color:white; background:var(--green); border:0; border-radius:10px; font:inherit; font-size:14px; font-weight:600; cursor:pointer; white-space:nowrap }
+    .search-btn:hover { background:#254936 }
+    .hint { color:#858b83; font-size:12px; margin:12px 0 0 }
+    .chips { margin-top:26px; display:flex; flex-wrap:wrap; gap:9px; justify-content:center }
+    .chip { border:1px solid var(--line); background:transparent; color:#4d574f; border-radius:999px; padding:8px 14px; font:inherit; font-size:13px; font-weight:500; cursor:pointer }
+    .chip:hover { border-color:#aab6a7; background:#f2f3ed }
+    .socials { margin-top:29px; color:#858b83; font-size:12px }
+    .socials a { margin:0 7px; color:#59675d; text-decoration:none }
+    .socials a:hover { color:var(--green); text-decoration:underline }
+    .results-wrap { max-width:960px; margin:70px auto 0; display:none }
+    .results-wrap.visible { display:block }
+    .result-top { border-bottom:1px solid var(--line); padding-bottom:18px; display:flex; align-items:end; justify-content:space-between; gap:20px }
+    .result-top h2 { font:400 30px/1.1 Georgia,serif; margin:0 0 7px; letter-spacing:-.03em }
+    .result-meta { margin:0; color:var(--muted); font-size:13px }
+    .filters { display:flex; gap:7px; flex-wrap:wrap }
+    .filter { border:1px solid var(--line); border-radius:99px; background:white; padding:7px 12px; color:#596159; font:inherit; font-size:12px; font-weight:600; cursor:pointer }
+    .filter.active { background:var(--green); color:white; border-color:var(--green) }
+    .cards { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:20px }
+    .card { background:white; border:1px solid var(--line); border-radius:14px; padding:19px 20px 17px; text-decoration:none; display:flex; flex-direction:column; min-height:190px; transition:transform .15s,border-color .15s }
+    .card:hover { transform:translateY(-2px); border-color:#b8c4b5 }
+    .card-head { display:flex; align-items:center; justify-content:space-between; gap:12px; color:var(--muted); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em }
+    .type { display:flex; align-items:center; gap:7px }
+    .type-icon { color:var(--orange); font-size:15px }
+    .match { color:#778077; font-size:11px; text-transform:none; letter-spacing:0; font-weight:500 }
+    .card h3 { font:400 22px/1.18 Georgia,serif; letter-spacing:-.025em; margin:16px 0 9px }
+    .card p { color:#687169; font-size:13px; margin:0 0 17px; line-height:1.55 }
+    .card-foot { border-top:1px solid #f0f0eb; padding-top:12px; margin-top:auto; display:flex; justify-content:space-between; gap:12px; align-items:center; color:#737b72; font-size:11px }
+    .source { display:flex; align-items:center; gap:6px }
+    .arrow { color:var(--green); font-size:16px }
+    .empty { background:white; border:1px dashed #d7d9d1; border-radius:14px; padding:36px; text-align:center; color:var(--muted); margin-top:20px }
+    footer { border-top:1px solid var(--line); color:#7b827a; font-size:12px; padding:24px 0 34px; display:flex; justify-content:space-between; gap:18px; flex-wrap:wrap }
+    footer a { color:var(--green); text-decoration:none }
+    .notice { max-width:960px; margin:18px auto 0; color:#80867e; font-size:11px }
+    @media(max-width:650px) { .shell{padding:0 18px} header{height:67px}.official{font-size:11px}.hero{margin-top:55px}.intro{font-size:15px}.search{height:auto;min-height:62px;padding-left:14px;gap:8px}.search-btn{padding:0 13px}.search input{font-size:14px}.results-wrap{margin-top:54px}.result-top{align-items:start;flex-direction:column}.cards{grid-template-columns:1fr}.card{min-height:175px} footer{flex-direction:column} }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="brand"><span class="mark">S</span><span>Find with Sadhguru</span></div>
+      <div class="official">Official Isha sources</div>
+    </header>
+    <main>
+      <section class="hero" aria-labelledby="title">
+        <div class="eyebrow">A library of wisdom</div>
+        <h1 id="title">Find what you’re<br>looking for.</h1>
+        <p class="intro">Search Sadhguru’s public videos, articles and audio from official Isha sources.</p>
+        <form class="search" id="searchForm" role="search">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" stroke-width="1.7"/><path d="m16 16 4.3 4.3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          <input id="query" type="search" placeholder="Try “how to overcome anxiety”" autocomplete="off" aria-label="Search Sadhguru content">
+          <button class="voice" id="voiceBtn" type="button" aria-label="Search with your voice" title="Search with your voice">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3m-4 0h8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          </button>
+          <button class="search-btn" type="submit">Search</button>
+        </form>
+        <p class="hint" id="voiceHint">Press the microphone to speak, or type a question.</p>
+        <div class="chips" aria-label="Suggested searches">
+          <button class="chip" data-query="how to overcome anxiety">Overcome anxiety</button>
+          <button class="chip" data-query="save soil">Save Soil</button>
+          <button class="chip" data-query="stress and tension">Manage stress</button>
+          <button class="chip" data-query="sleep peacefully">Sleep better</button>
+          <button class="chip" data-query="find inner peace">Find inner peace</button>
+        </div>
+        <div class="socials">Official channels:
+          <a href="https://www.youtube.com/@sadhguru" target="_blank" rel="noopener">YouTube</a>·
+          <a href="https://www.instagram.com/sadhguru/" target="_blank" rel="noopener">Instagram</a>·
+          <a href="https://www.facebook.com/sadhguru" target="_blank" rel="noopener">Facebook</a>·
+          <a href="https://www.linkedin.com/in/sadhgurujv/" target="_blank" rel="noopener">LinkedIn</a>·
+          <a href="https://x.com/SadhguruJV" target="_blank" rel="noopener">X</a>
+        </div>
+      </section>
+      <section class="results-wrap" id="results" aria-live="polite">
+        <div class="result-top">
+          <div><h2 id="resultTitle">Search results</h2><p class="result-meta" id="resultMeta"></p></div>
+          <div class="filters" aria-label="Filter by content type">
+            <button class="filter active" data-type="all">All</button><button class="filter" data-type="video">Videos</button><button class="filter" data-type="article">Articles</button><button class="filter" data-type="audio">Audio</button>
+          </div>
+        </div>
+        <div class="cards" id="cards"></div>
+      </section>
+      <p class="notice" id="catalogStatus" role="status">Loading the official Isha catalog…</p>
+    </main>
+    <footer><span>For discovery and learning</span><span>Sources: <a href="https://isha.sadhguru.org/in/en" target="_blank" rel="noopener">isha.sadhguru.org</a> · <a href="https://www.youtube.com/@sadhguru" target="_blank" rel="noopener">Sadhguru on YouTube</a></span></footer>
+  </div>
+  <script>
+    // Small fallback sample, used only if the generated catalog cannot be loaded.
+    const sampleItems = [
+      {type:'video', title:'4 Ways to Deal with Anxiety', summary:'Sadhguru shares four tools to take charge of the mind and make life more effortless.', url:'https://www.youtube.com/watch?v=vO570HeAreI', source:'Sadhguru on YouTube', date:'May 4, 2021', tags:'anxiety fear mind emotions overcome worried', terms:'how to overcome anxiety calm down worry'},
+      {type:'article', title:'How To Deal With Anxiety When Meeting People?', summary:'A response to a question about feeling anxious and opening up when meeting people.', url:'https://isha.sadhguru.org/en/wisdom/article/overcoming-social-anxiety', source:'Isha • Wisdom', date:'May 2, 2025', tags:'anxiety social people relationships', terms:'social anxiety meeting people nervous'},
+      {type:'video', title:'Feeling Anxious Around New People? Watch This!', summary:'Sadhguru responds to a question about handling anxiety when meeting people.', url:'https://isha.sadhguru.org/en/wisdom/video/social-anxiety-disorder-how-to-overcome', source:'Isha • Wisdom', date:'Sep 14, 2018', tags:'anxiety social people', terms:'social anxiety meeting people nervous'},
+      {type:'audio', title:'4 Ways to Deal with Anxiety', summary:'Listen to Sadhguru’s short message on taking charge of the mind and overcoming anxiety.', url:'https://isha.sadhguru.org/en/wisdom/audio/4-ways-to-deal-with-anxiety', source:'Isha • Wisdom', date:'Mar 14, 2024', tags:'anxiety fear mind emotions', terms:'how to overcome anxiety audio listen'},
+      {type:'audio', title:'Overcome Stress, Tension & Anxiety', summary:'A short message from Sadhguru on stress, tension and anxiety.', url:'https://isha.sadhguru.org/en/wisdom/audio/overcome-stress-tension-anxiety', source:'Isha • Wisdom', date:'Jun 4, 2024', tags:'stress anxiety tension', terms:'manage stress tension overwhelmed'},
+      {type:'article', title:'Suffering from Anxiety? Learn to Sit Properly!', summary:'Sadhguru answers a question about anxiety and the experience of friction in the system.', url:'https://isha.sadhguru.org/en/wisdom/article/suffering-anxiety-sit-properly', source:'Isha • Wisdom', date:'May 23, 2024', tags:'anxiety stress wellbeing', terms:'how to overcome anxiety control anxiety'},
+      {type:'video', title:'Worried or Anxious? Remember These 4 Things', summary:'Four tools for taking charge of the mind and easing anxiety.', url:'https://isha.sadhguru.org/en/wisdom/video/worried-anxious-remember-4-things', source:'Isha • Wisdom', date:'2021', tags:'anxiety worry mind stress', terms:'worried anxious calm mind'},
+      {type:'audio', title:'Try This Whenever You Feel Anxious', summary:'A short audio message from Sadhguru related to anxiety.', url:'https://isha.sadhguru.org/en/wisdom/audio/try-this-whenever-you-feel-anxious', source:'Isha • Wisdom', date:'Mar 26, 2026', tags:'anxiety emotions yoga', terms:'when feel anxious listen'},
+      {type:'article', title:'Why is Yoga Good for Mental Health?', summary:'Sadhguru responds to a question about mental health, including depression and anxiety.', url:'https://isha.sadhguru.org/en/wisdom/article/benefits-yoga-for-mental-health', source:'Isha • Wisdom', date:'May 2, 2025', tags:'mental health anxiety depression yoga', terms:'mind wellbeing emotional health'},
+      {type:'audio', title:'How to Escape the Cycle of Stress, Anxiety and Misery?', summary:'Sadhguru responds to a question about frustration, misery and rage.', url:'https://isha.sadhguru.org/en/wisdom/audio/escape-cycle-of-stress-anxiety-misery', source:'Isha • Wisdom', date:'2021', tags:'stress anxiety misery', terms:'stress overwhelm frustration peace'},
+      {type:'article', title:'How to Sleep Well – 6 Tips From Sadhguru', summary:'Sadhguru shares six points related to sleep and sleeping in a relaxed state.', url:'https://isha.sadhguru.org/en/wisdom/article/how-to-sleep-well', source:'Isha • Wisdom', date:'Jun 13, 2025', tags:'sleep wellbeing body', terms:'sleep better sleeping rest peacefully'},
+      {type:'audio', title:'How to Sleep Less & Sleep Better', summary:'A short audio about sleep, rest and bringing the body to ease.', url:'https://isha.sadhguru.org/en/wisdom/audio/how-to-sleep-less-sleep-better', source:'Isha • Wisdom', date:'Dec 14, 2023', tags:'sleep body lifestyle', terms:'sleep better sleeping rest peacefully'}
+    ];
+    let items = sampleItems;
+    let catalogLoaded = false;
+    const status = document.querySelector('#catalogStatus');
+    const expansions = {anxiety:['anxiety','anxious','worry','worried','fear','nervous'], stress:['stress','tension','overwhelmed','anxiety'], calm:['peace','anxiety','stress','mind'], sleep:['sleep','rest','peace'], 'inner peace':['peace','calm','mind'], overcome:['overcome','deal with','control','anxiety'], soil:['soil','save soil','soil degradation','soil revitalization','environment'], 'save soil':['save soil','soil','environment','ecology']};
+    const form=document.querySelector('#searchForm'), input=document.querySelector('#query'), results=document.querySelector('#results'), cards=document.querySelector('#cards'), title=document.querySelector('#resultTitle'), meta=document.querySelector('#resultMeta');
+    let selectedType='all', currentQuery='';
+    function words(q){let base=q.toLowerCase().replace(/[“”?!.,]/g,' ').split(/\s+/).filter(w=>w.length>2);let more=[...base];for(const [key,vals] of Object.entries(expansions)){if(q.toLowerCase().includes(key))more.push(...vals)}return [...new Set(more)]}
+    function search(q){currentQuery=q.trim(); if(!currentQuery)return; selectedType='all';document.querySelectorAll('.filter').forEach(b=>b.classList.toggle('active',b.dataset.type==='all'));results.classList.add('visible');title.textContent='Results for “'+currentQuery+'”';render()}
+    function render(){const terms=words(currentQuery);let found=items.map(item=>{const hay=(item.title+' '+item.summary+' '+item.tags+' '+item.terms).toLowerCase();let score=terms.reduce((n,w)=>n+(hay.includes(w)?(item.title.toLowerCase().includes(w)?3:1):0),0);return {...item,score}}).filter(i=>i.score>0&&(selectedType==='all'||i.type===selectedType)).sort((a,b)=>b.score-a.score);
+      meta.textContent=found.length+' official '+(found.length===1?'result':'results')+' · ordered by relevance';
+      cards.innerHTML=found.length?found.map(i=>`<a class="card" href="${escapeHtml(i.url)}" target="_blank" rel="noopener noreferrer"><div class="card-head"><span class="type"><span class="type-icon">${i.type==='video'?'▶':i.type==='audio'?'◖':'▤'}</span>${escapeHtml(i.type)}</span><span class="match">${i.score>=5?'Strong match':'Related'}</span></div><h3>${escapeHtml(i.title)}</h3><p>${escapeHtml(i.summary||'Open the original official Isha page for details.')}</p><div class="card-foot"><span class="source">${escapeHtml(i.source||'Isha • Wisdom')}${i.date?' · '+escapeHtml(i.date):''}</span><span class="arrow">↗</span></div></a>`).join(''):`<div class="empty">${catalogLoaded?'No matching items found. Try a broader topic such as “soil”, “anxiety”, or “sleep”.':'The official catalog is not loaded yet. Open this page through the local web address shown in the project instructions, then search again.'}</div>`;
+    }
+    function escapeHtml(value){return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
+    fetch('./catalog.json').then(response=>{if(!response.ok)throw new Error('Catalog request failed');return response.json()}).then(data=>{
+      const official=(Array.isArray(data.items)?data.items:[]).filter(i=>{
+        try{const u=new URL(i.url);return u.protocol==='https:'&&u.hostname==='isha.sadhguru.org'&&['article','video','audio'].includes(i.type)}catch{return false}
+      });
+      if(!official.length)throw new Error('No official catalog entries found');
+      items=official;catalogLoaded=true;
+      status.textContent=`Official Isha catalog loaded · ${official.length.toLocaleString()} public articles, videos and audio pages. Search results link to the original pages.`;
+      if(currentQuery)render();
+    }).catch(()=>{status.textContent='Showing a small sample because the full catalog could not load. Open this page through the local web address in the project instructions to load catalog.json.'});
+    form.addEventListener('submit',e=>{e.preventDefault();search(input.value)});
+    document.querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{input.value=b.dataset.query;search(input.value)}));
+    document.querySelectorAll('.filter').forEach(b=>b.addEventListener('click',()=>{selectedType=b.dataset.type;document.querySelectorAll('.filter').forEach(x=>x.classList.toggle('active',x===b));render()}));
+    const voiceBtn=document.querySelector('#voiceBtn'), voiceHint=document.querySelector('#voiceHint'), SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SpeechRecognition){voiceBtn.disabled=true;voiceBtn.title='Voice search is not available in this browser';voiceHint.textContent='Voice search is available in supported browsers such as Chrome. You can type a question here.'}
+    else {const recognition=new SpeechRecognition();recognition.lang=navigator.language||'en-IN';recognition.interimResults=false;recognition.maxAlternatives=1;voiceBtn.addEventListener('click',()=>{try{recognition.start();voiceBtn.classList.add('listening');voiceHint.textContent='Listening… speak your question.'}catch(e){voiceHint.textContent='Voice search is already listening.'}});recognition.onresult=e=>{input.value=e.results[0][0].transcript;voiceHint.textContent='Heard: “'+input.value+'”';search(input.value)};recognition.onerror=()=>{voiceHint.textContent='Could not hear that. Please try again or type your search.';voiceBtn.classList.remove('listening')};recognition.onend=()=>voiceBtn.classList.remove('listening')}
+  </script>
+</body>
+</html>
+
