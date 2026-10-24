@@ -69,6 +69,7 @@ func _ready() -> void:
 	add_child(hud)
 	hud.setup(self)
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
+	Net.player_joined.connect(_on_player_joined)
 	if multiplayer.is_server():
 		for peer in Net.players:
 			_add_player(peer)
@@ -479,15 +480,28 @@ func _update_incubator_pods() -> void:
 			pod.scale = Vector3.ONE * (0.8 + 0.3 * p)
 
 
+## Host: someone joined (or rejoined) the running game.
+func _on_player_joined(peer: int) -> void:
+	if not multiplayer.is_server() or thieves.has(peer):
+		return
+	_add_player(peer)
+	var who: String = Net.players[peer]["name"]
+	say("%s joined the game!" % who, Color(0.6, 1.0, 0.6))
+	_to_ready_peers("_say", ["%s joined the game!" % who, Color(0.6, 1.0, 0.6)])
+
+
 func _on_peer_disconnected(peer: int) -> void:
 	_ready_peers.erase(peer)
 	if not thieves.has(peer):
 		return
+	var who: String = thieves[peer].display_name
 	if multiplayer.is_server():
 		var egg := carried_egg(peer)
 		if egg:
 			_drop_egg(egg, thieves[peer].logic_position())
 		players_state.erase(peer)
+		say("%s left the game. They can rejoin any time." % who, Color(1.0, 0.85, 0.4))
+		_to_ready_peers("_say", ["%s left the game." % who, Color(1.0, 0.85, 0.4)])
 	thieves[peer].queue_free()
 	thieves.erase(peer)
 

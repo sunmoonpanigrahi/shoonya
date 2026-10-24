@@ -99,6 +99,7 @@ func _host() -> void:
 func _join() -> void:
 	SaveGame.save_game()
 	Net.mode = "client"
+	Net.rejoin_address = ""
 	get_tree().change_scene_to_file(LOBBY_SCENE)
 
 

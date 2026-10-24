@@ -1,12 +1,19 @@
 extends Control
 ## Same-Wi-Fi lobby. The host sees its address and who joined; joiners see hosts
 ## found on the network (or type the host's address) and wait for the host to start.
+## After a dropped connection this screen keeps trying to rejoin the same host.
+
+const REJOIN_INTERVAL := 3.0
+const REJOIN_GIVE_UP := 90.0
 
 var _players: VBoxContainer
 var _hosts: VBoxContainer
 var _status: Label
 var _address: LineEdit
 var _start: Button
+var _rejoin_timer := 0.0
+var _rejoin_elapsed := 0.0
+var _rejoin_tries := 0
 
 
 func _ready() -> void:
@@ -65,11 +72,13 @@ func _ready() -> void:
 		manual.add_theme_constant_override("separation", 10)
 		right.add_child(manual)
 		_address = LineEdit.new()
+		_address.text = str(SaveGame.data.get("last_host", ""))
 		_address.placeholder_text = "Host address, e.g. 192.168.1.20"
 		_address.custom_minimum_size = Vector2(380, 56)
 		manual.add_child(_address)
 		manual.add_child(UIKit.button("Join", func() -> void: _join(_address.text), 140))
-		_status.text = "Looking for games on this Wi-Fi..."
+		_status.text = Net.last_message if Net.last_message != "" else "Looking for games on this Wi-Fi..."
+		Net.last_message = ""
 		Net.start_discovery()
 		Net.hosts_changed.connect(_refresh_hosts)
 		Net.join_failed.connect(_on_join_failed)
@@ -78,14 +87,34 @@ func _ready() -> void:
 	_refresh_players()
 
 
+func _process(delta: float) -> void:
+	if Net.rejoin_address == "" or Net.connecting or not Net.players.is_empty():
+		return
+	_rejoin_elapsed += delta
+	if _rejoin_elapsed > REJOIN_GIVE_UP:
+		_status.text = "Could not rejoin %s. Check the Wi-Fi, then pick the game again." % Net.rejoin_address
+		Net.rejoin_address = ""
+		return
+	_rejoin_timer -= delta
+	if _rejoin_timer <= 0.0:
+		_rejoin_timer = REJOIN_INTERVAL
+		_rejoin_tries += 1
+		_join(Net.rejoin_address)
+		_status.text = "Lost the connection. Rejoining %s (try %d)..." % [Net.rejoin_address, _rejoin_tries]
+
+
 func _on_join_failed(reason: String) -> void:
-	_status.text = reason
+	if Net.rejoin_address == "":
+		_status.text = reason
 
 
 func _join(address: String) -> void:
-	if address.strip_edges().is_empty():
+	address = address.strip_edges()
+	if address.is_empty():
 		_status.text = "Type the host's address first."
 		return
+	SaveGame.data["last_host"] = address
+	SaveGame.save_game()
 	var err := Net.join_game(address)
 	_status.text = "Connecting to %s..." % address if err == OK else "Could not connect (%s)." % error_string(err)
 
@@ -99,7 +128,8 @@ func _refresh_hosts() -> void:
 		_hosts.add_child(UIKit.label("None found yet", 24, UIKit.MUTED))
 	for ip in Net.hosts:
 		var host: Dictionary = Net.hosts[ip]
-		_hosts.add_child(UIKit.button("%s's game (%d players) · %s" % [host["name"], host["players"], ip], _join.bind(ip), 520))
+		var state := "playing now" if host.get("in_game", false) else "waiting"
+		_hosts.add_child(UIKit.button("%s's game · %d players, %s · %s" % [host["name"], host["players"], state, ip], _join.bind(ip), 560))
 
 
 func _refresh_players() -> void:
@@ -113,6 +143,6 @@ func _refresh_players() -> void:
 		var col: Color = GameData.PLAYER_COLORS[int(p["index"]) % GameData.PLAYER_COLORS.size()]
 		_players.add_child(UIKit.label("%s%s%s" % [p["name"], pet, "  (host)" if id == 1 else ""], 28, col))
 	if Net.mode == "client" and not Net.players.is_empty():
-		_status.text = "Connected! Waiting for the host to start..."
+		_status.text = "Connected! Waiting for the host to start (or joining the running game)..."
 	if Net.mode == "host":
 		_status.text = "%d player%s in the game. Start when everyone is in." % [Net.players.size(), "" if Net.players.size() == 1 else "s"]

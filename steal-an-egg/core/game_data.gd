@@ -107,7 +107,14 @@ const BAT_STUN_PER_LEVEL := 0.25
 const BAT_COOLDOWN_PER_LEVEL := 0.08
 
 const LAN_GAME_PORT := 8910
+## Joiners listen here for hosts announcing themselves.
 const LAN_DISCOVERY_PORT := 8911
+## Hosts listen here for joiners asking who is hosting.
+const LAN_PROBE_PORT := 8912
+## How long a quiet phone is waited for before it counts as gone (ENet peer timeout).
+const NET_TIMEOUT_LIMIT := 64
+const NET_TIMEOUT_MIN_MS := 15000
+const NET_TIMEOUT_MAX_MS := 60000
 const MAX_PLAYERS := 4
 const PLAYER_COLORS: Array[Color] = [
 	Color(0.95, 0.30, 0.30), Color(0.25, 0.60, 1.00), Color(0.30, 0.85, 0.40), Color(1.00, 0.80, 0.20),
