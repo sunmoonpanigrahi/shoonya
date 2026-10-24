@@ -182,10 +182,6 @@ func _face(dir: Vector3) -> void:
 
 # --- Network state for phones that are not the host -----------------------------
 
-func pack() -> Array:
-	return [id, element, rarity, position, velocity, yaw, state]
-
-
 func apply_net_state(pos: Vector3, vel: Vector3, new_yaw: float, new_state: int) -> void:
 	net_position = pos
 	net_velocity = vel

@@ -58,10 +58,6 @@ func snap(kind: String, victim: int) -> void:
 	victim_id = victim
 
 
-func pack() -> Array:
-	return [id, owner_peer, position, state, hold_left]
-
-
 func _process(delta: float) -> void:
 	age += delta
 	var closed := state == State.HOLDING

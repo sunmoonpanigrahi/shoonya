@@ -10,7 +10,7 @@ signal message(text: String, color: Color)
 
 const SNAPSHOT_INTERVAL := 0.05
 const STATE_SEND_INTERVAL := 1.0 / 30.0
-const READY_TIMEOUT := 10.0
+const MONSTERS_PER_PACKET := 24
 
 var seed_value := 0
 var thieves: Dictionary = {}
@@ -37,6 +37,10 @@ var _send_timer := 0.0
 var _pod_timer := 0.0
 var _ready_peers: Dictionary = {}
 var _local_traps_left := GameData.TRAPS_PER_TRIP
+## Client-only: keeps telling the host it is ready until the first update arrives
+## (the host may still be loading the world when the first message is sent).
+var _got_snapshot := false
+var _ready_timer := 0.0
 
 
 func _ready() -> void:
@@ -69,8 +73,6 @@ func _ready() -> void:
 		for peer in Net.players:
 			_add_player(peer)
 		_ready_peers.clear()
-	else:
-		_client_ready.rpc_id(1)
 	say("Grab an egg from a nest and bring it back to your base!", Color.WHITE)
 
 
@@ -87,6 +89,11 @@ func _physics_process(delta: float) -> void:
 	if multiplayer.is_server():
 		_host_step(delta)
 	else:
+		if not _got_snapshot:
+			_ready_timer -= delta
+			if _ready_timer <= 0.0:
+				_ready_timer = 0.5
+				_client_ready.rpc_id(1)
 		for m: Monster in monsters.values():
 			m.remote_follow(delta)
 		_send_timer -= delta
@@ -163,11 +170,9 @@ func _host_step(delta: float) -> void:
 	for t: Thief in thieves.values():
 		t.prev_logic_position = t.logic_position()
 	_snapshot_timer -= delta
-	if _snapshot_timer <= 0.0 and Net.is_online():
+	if _snapshot_timer <= 0.0 and Net.is_online() and not _ready_peers.is_empty():
 		_snapshot_timer = SNAPSHOT_INTERVAL
-		var snap := _make_snapshot()
-		for peer in _ready_peers:
-			_snapshot.rpc_id(peer, snap)
+		_send_snapshot()
 
 
 func _add_player(peer: int) -> void:
@@ -272,6 +277,7 @@ func _step_eggs(delta: float) -> void:
 					egg.set_rarity(Loot.roll_rarity(egg.biome, _rng))
 					egg.position = egg.nest_position
 					egg.state = Egg.State.NEST
+					_egg_changed(egg)
 			Egg.State.CARRIED:
 				var carrier: Thief = thieves.get(egg.carrier)
 				if carrier == null:
@@ -293,6 +299,7 @@ func _pick_up(t: Thief, egg: Egg) -> void:
 	egg.state = Egg.State.CARRIED
 	egg.carrier = t.peer_id
 	t.carrying_egg = egg.id
+	_egg_changed(egg)
 	var rarity_name: String = GameData.rarity(egg.rarity)["name"]
 	if from_nest and not _has_guards(egg.id):
 		var delay := 0.0
@@ -317,6 +324,14 @@ func _spawn_monster(egg: Egg, delay: float) -> void:
 	m.state_left = Monster.EMERGE_SECONDS + delay
 	_entities.add_child(m)
 	monsters[m.id] = m
+	_to_ready_peers("_monster_spawned", [m.id, m.element, m.rarity, m.position])
+
+
+func _remove_monster(id: int) -> void:
+	if monsters.has(id):
+		monsters[id].queue_free()
+		monsters.erase(id)
+		_to_ready_peers("_monster_removed", [id])
 
 
 func _has_guards(egg_id: int) -> bool:
@@ -333,18 +348,19 @@ func _drop_egg(egg: Egg, pos: Vector3) -> void:
 	egg.state = Egg.State.DROPPED
 	egg.carrier = 0
 	egg.position = WorldLayout.clamp_to_world(Vector3(pos.x, 0.0, pos.z))
+	_egg_changed(egg)
 
 
 func _deliver(t: Thief, egg: Egg) -> void:
 	_send_to(t.peer_id, "_egg_delivered", [egg.rarity, egg.element])
 	for id in monsters.keys():
 		if monsters[id].egg_id == egg.id:
-			monsters[id].queue_free()
-			monsters.erase(id)
+			_remove_monster(id)
 	t.carrying_egg = -1
 	egg.state = Egg.State.EMPTY
 	egg.carrier = 0
 	egg.refill_left = Loot.nest_refill_seconds(egg.biome)
+	_egg_changed(egg)
 
 
 func _check_catches() -> void:
@@ -393,6 +409,7 @@ func _create_trap(id: int, owner_peer: int, pos: Vector3) -> Trap:
 	trap.setup(id, owner_peer, pos, color)
 	_entities.add_child(trap)
 	traps[id] = trap
+	_to_ready_peers("_trap_spawned", [id, owner_peer, trap.position])
 	return trap
 
 
@@ -400,6 +417,7 @@ func _remove_trap(id: int) -> void:
 	if traps.has(id):
 		traps[id].queue_free()
 		traps.erase(id)
+		_to_ready_peers("_trap_removed", [id])
 
 
 func _handle_bat(peer: int) -> void:
@@ -489,6 +507,18 @@ func _broadcast(method: String, args: Array) -> void:
 		callv("rpc_id", [peer, method] + args)
 
 
+## Host only: tells every phone that has the world loaded (not this one).
+func _to_ready_peers(method: String, args: Array) -> void:
+	if not multiplayer.is_server():
+		return
+	for peer in _ready_peers:
+		callv("rpc_id", [peer, method] + args)
+
+
+func _egg_changed(egg: Egg) -> void:
+	_to_ready_peers("_egg_update", [egg.pack()])
+
+
 func _broadcast_effect(peer: int, kind: String, a: Variant, b: Variant, epoch: int = -1) -> void:
 	_broadcast("_thief_effect", [peer, kind, a, b, epoch])
 
@@ -504,8 +534,19 @@ func send_effect(peer: int, kind: String, a: Variant, b: Variant) -> void:
 
 @rpc("any_peer", "reliable")
 func _client_ready() -> void:
-	if multiplayer.is_server():
-		_ready_peers[multiplayer.get_remote_sender_id()] = true
+	var peer := multiplayer.get_remote_sender_id()
+	if not multiplayer.is_server() or _ready_peers.has(peer):
+		return
+	# Bring the newcomer up to date, then include it in every update from now on.
+	var all_eggs := []
+	for egg in eggs:
+		all_eggs.append(egg.pack())
+	_eggs_full.rpc_id(peer, all_eggs)
+	for m: Monster in monsters.values():
+		_monster_spawned.rpc_id(peer, m.id, m.element, m.rarity, m.position)
+	for trap: Trap in traps.values():
+		_trap_spawned.rpc_id(peer, trap.id, trap.owner_peer, trap.position)
+	_ready_peers[peer] = true
 
 
 @rpc("any_peer", "unreliable_ordered")
@@ -568,8 +609,59 @@ func _you_were_caught(egg_id: int, place: String) -> void:
 	say("Caught! You fell back to %s. Your egg is where you were caught." % place, Color(1.0, 0.4, 0.3))
 
 
+@rpc("authority", "reliable")
+func _eggs_full(rows: Array) -> void:
+	for row in rows:
+		_egg_update(row)
+
+
+@rpc("authority", "reliable")
+func _egg_update(row: Array) -> void:
+	var egg := egg_by_id(row[0])
+	if egg == null:
+		return
+	if egg.rarity != row[2]:
+		egg.set_rarity(row[2])
+	egg.state = row[1]
+	egg.carrier = row[4]
+	if egg.state != Egg.State.CARRIED:
+		egg.position = row[3]
+
+
+@rpc("authority", "reliable")
+func _monster_spawned(id: int, element_id: String, rarity_index: int, pos: Vector3) -> void:
+	if monsters.has(id):
+		return
+	var m := Monster.new()
+	m.setup(id, element_id, rarity_index)
+	m.position = pos
+	m.net_position = pos
+	_entities.add_child(m)
+	monsters[id] = m
+
+
+@rpc("authority", "reliable")
+func _monster_removed(id: int) -> void:
+	if monsters.has(id):
+		monsters[id].queue_free()
+		monsters.erase(id)
+
+
+@rpc("authority", "reliable")
+func _trap_spawned(id: int, owner_peer: int, pos: Vector3) -> void:
+	if not traps.has(id):
+		_create_trap(id, owner_peer, pos)
+
+
+@rpc("authority", "reliable")
+func _trap_removed(id: int) -> void:
+	_remove_trap(id)
+
+
+## Thieves and traps, 20 times a second.
 @rpc("authority", "unreliable_ordered")
 func _snapshot(snap: Dictionary) -> void:
+	_got_snapshot = true
 	server_time = snap["t"]
 	var seen := {}
 	for row in snap["th"]:
@@ -589,59 +681,48 @@ func _snapshot(snap: Dictionary) -> void:
 		if not seen.has(peer):
 			thieves[peer].queue_free()
 			thieves.erase(peer)
-	seen.clear()
-	for row in snap["m"]:
-		var id: int = row[0]
-		seen[id] = true
-		var m: Monster = monsters.get(id)
-		if m == null:
-			m = Monster.new()
-			m.setup(id, row[1], row[2])
-			m.position = row[3]
-			_entities.add_child(m)
-			monsters[id] = m
-		m.apply_net_state(row[3], row[4], row[5], row[6])
-	for id in monsters.keys():
-		if not seen.has(id):
-			monsters[id].queue_free()
-			monsters.erase(id)
-	for row in snap["e"]:
-		var egg := egg_by_id(row[0])
-		if egg == null:
-			continue
-		if egg.rarity != row[2]:
-			egg.set_rarity(row[2])
-		egg.state = row[1]
-		egg.carrier = row[4]
-		if egg.state != Egg.State.CARRIED:
-			egg.position = row[3]
-	seen.clear()
-	for row in snap["tr"]:
-		var id: int = row[0]
-		seen[id] = true
-		var trap: Trap = traps.get(id)
-		if trap == null:
-			trap = _create_trap(id, row[1], row[2])
-		trap.state = row[3]
-		trap.hold_left = row[4]
-	for id in traps.keys():
-		if not seen.has(id):
-			_remove_trap(id)
+	var trap_info: PackedInt32Array = snap["tr"]
+	var trap_hold: PackedFloat32Array = snap["trh"]
+	for i in trap_hold.size():
+		var trap: Trap = traps.get(trap_info[i * 2])
+		if trap:
+			trap.state = trap_info[i * 2 + 1]
+			trap.hold_left = trap_hold[i]
 
 
-func _make_snapshot() -> Dictionary:
+## Monster positions, sent in packet-sized groups alongside each snapshot.
+@rpc("authority", "unreliable_ordered")
+func _monster_states(info: PackedInt32Array, pos: PackedVector3Array, vel: PackedVector3Array, yaw: PackedFloat32Array) -> void:
+	for i in pos.size():
+		var m: Monster = monsters.get(info[i * 2])
+		if m:
+			m.apply_net_state(pos[i], vel[i], yaw[i], info[i * 2 + 1])
+
+
+func _send_snapshot() -> void:
 	var th := []
 	for peer in thieves:
 		var t: Thief = thieves[peer]
 		th.append([peer, t.logic_position(), t.logic_velocity(), t.yaw, t.speed_t, t.moving,
 			t.carrying_egg, players_state.get(peer, {}).get("traps_left", 0)])
-	var m := []
-	for monster: Monster in monsters.values():
-		m.append(monster.pack())
-	var e := []
-	for egg in eggs:
-		e.append(egg.pack())
-	var tr := []
+	var trap_info := PackedInt32Array()
+	var trap_hold := PackedFloat32Array()
 	for trap: Trap in traps.values():
-		tr.append(trap.pack())
-	return {"t": server_time, "th": th, "m": m, "e": e, "tr": tr}
+		trap_info.append_array([trap.id, trap.state])
+		trap_hold.append(trap.hold_left)
+	var snap := {"t": server_time, "th": th, "tr": trap_info, "trh": trap_hold}
+	var all_monsters: Array = monsters.values()
+	for peer in _ready_peers:
+		_snapshot.rpc_id(peer, snap)
+	for start in range(0, all_monsters.size(), MONSTERS_PER_PACKET):
+		var info := PackedInt32Array()
+		var pos := PackedVector3Array()
+		var vel := PackedVector3Array()
+		var yaw := PackedFloat32Array()
+		for m: Monster in all_monsters.slice(start, start + MONSTERS_PER_PACKET):
+			info.append_array([m.id, m.state])
+			pos.append(m.position)
+			vel.append(m.velocity)
+			yaw.append(m.yaw)
+		for peer in _ready_peers:
+			_monster_states.rpc_id(peer, info, pos, vel, yaw)

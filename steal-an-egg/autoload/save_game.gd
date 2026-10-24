@@ -69,8 +69,8 @@ func save_game() -> void:
 
 
 ## Starts a fresh, throwaway profile (used by tests).
-func use_test_profile() -> void:
-	save_path = "user://test_save.json"
+func use_test_profile(profile: String = "test") -> void:
+	save_path = "user://%s_save.json" % profile
 	if FileAccess.file_exists(save_path):
 		DirAccess.remove_absolute(save_path)
 	data = defaults()

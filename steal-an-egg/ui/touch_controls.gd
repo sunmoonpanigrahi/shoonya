@@ -17,6 +17,8 @@ var _joy_vector := Vector2.ZERO
 var _speed_dir := 0.0
 var _bat_ready_at := 0.0
 var _bat_cooldown := 1.0
+## What the controls last told the thief, so input set elsewhere (tests) is left alone.
+var _last_move := Vector2.ZERO
 
 
 func setup(owner_world: World) -> void:
@@ -155,7 +157,11 @@ func _process(delta: float) -> void:
 		float(Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT)) - float(Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT)),
 		float(Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN)) - float(Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP)))
 	var joy := _joy_vector if _joy_vector.length() > 0.0 else keys.limit_length(1.0)
-	thief.move_input = joy if visible else Vector2.ZERO
+	if not visible:
+		joy = Vector2.ZERO
+	if joy != _last_move:
+		thief.move_input = joy
+		_last_move = joy
 	queue_redraw()
 
 
