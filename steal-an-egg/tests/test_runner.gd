@@ -11,6 +11,7 @@ const TEST_SCRIPTS := [
 	"res://tests/test_loot.gd",
 	"res://tests/test_save_game.gd",
 	"res://tests/test_gameplay.gd",
+	"res://tests/test_ui.gd",
 ]
 
 

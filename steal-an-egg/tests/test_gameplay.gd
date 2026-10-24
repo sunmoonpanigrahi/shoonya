@@ -21,8 +21,10 @@ func _end(world: World) -> void:
 
 ## Moves a thief so that this frame's path runs from `from` to `to`.
 func _run(thief: Thief, from: Vector3, to: Vector3) -> void:
+	# Jump to the start without "running" there (like a fall, which resets the path).
 	thief.position = from
 	thief.net_position = from
+	thief.prev_logic_position = from
 	await frames(1)
 	thief.position = to
 	thief.net_position = to

@@ -1,0 +1,96 @@
+name: Build Steal an Egg
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "steal-an-egg/**"
+      - ".github/workflows/build-steal-an-egg.yml"
+
+permissions:
+  contents: read
+
+env:
+  GODOT_VERSION: "4.7.2"
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        # Explicit bash turns on pipefail, so a failing command piped into tee fails the step.
+        shell: bash
+        working-directory: steal-an-egg
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools
+      - name: Install Android build tools
+        run: sdkmanager "build-tools;36.0.0"
+      - name: Cache Godot
+        id: cache-godot
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}
+      - name: Download Godot and export templates
+        if: steps.cache-godot.outputs.cache-hit != 'true'
+        working-directory: ${{ runner.temp }}
+        run: |
+          base="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          curl -fsSL -o godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          curl -fsSL -o templates.tpz "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          curl -fsSL -o SHA512-SUMS.txt "$base/SHA512-SUMS.txt"
+          grep -E " (Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip|Godot_v${GODOT_VERSION}-stable_export_templates.tpz)$" SHA512-SUMS.txt \
+            | sed -e "s/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip/godot.zip/" -e "s/Godot_v${GODOT_VERSION}-stable_export_templates.tpz/templates.tpz/" \
+            | sha512sum -c -
+          mkdir -p ~/godot/templates
+          unzip -q godot.zip -d ~/godot
+          mv ~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 ~/godot/godot
+          unzip -q templates.tpz -d ~/godot
+          mv ~/godot/templates ~/godot/export_templates
+      - name: Install export templates
+        run: |
+          mkdir -p ~/.local/share/godot/export_templates
+          ln -sfn ~/godot/export_templates ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+      - name: Import project
+        run: ~/godot/godot --headless --path . --import 2>&1 | tee import.log
+      - name: Check every script compiles
+        run: |
+          timeout 120 ~/godot/godot --headless --path . res://tests/check_scripts.tscn 2>&1 | tee check.log
+          ! grep -q "SCRIPT ERROR" check.log
+      - name: Run unit and gameplay tests
+        run: |
+          timeout 300 ~/godot/godot --headless --path . res://tests/test_runner.tscn 2>&1 | tee tests.log
+          ! grep -q "SCRIPT ERROR" tests.log
+      - name: Run Wi-Fi network test
+        run: timeout 180 tests/run_net_smoke.sh ~/godot/godot
+      - name: Export Android debug APK
+        run: |
+          keytool -genkeypair -v -keystore "$RUNNER_TEMP/debug.keystore" -storepass android -alias androiddebugkey \
+            -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          export GODOT_ANDROID_KEYSTORE_DEBUG_PATH="$RUNNER_TEMP/debug.keystore"
+          export GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey
+          export GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=android
+          settings_dir=~/.config/godot
+          mkdir -p "$settings_dir"
+          printf '[gd_resource type="EditorSettings" format=3]\n\n[resource]\nexport/android/android_sdk_path = "%s"\nexport/android/java_sdk_path = "%s"\n' \
+            "$ANDROID_SDK_ROOT" "$JAVA_HOME" > "$settings_dir/editor_settings-4.7.tres"
+          mkdir -p build
+          timeout 600 ~/godot/godot --headless --path . --export-debug "Android" build/steal-an-egg-debug.apk 2>&1 | tee export.log
+          test -s build/steal-an-egg-debug.apk
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: steal-an-egg-android
+          path: steal-an-egg/build/steal-an-egg-debug.apk
+          if-no-files-found: error
+          retention-days: 14

@@ -30,3 +30,7 @@ YouTube appears as a direct search link into the official Sadhguru channel. The 
 
 For production, the GitHub Actions workflow refreshes the Isha index daily and publishes the website and `catalog.json` through GitHub Pages. The website does not copy or host source media. See `android-app/README.md` for the Android app setup and publication prerequisites.
 
+
+## Also in this repository
+
+`steal-an-egg/` holds **Steal an Egg**, a separate Godot 4 mobile game. See [`steal-an-egg/README.md`](steal-an-egg/README.md). Its own workflow, `.github/workflows/build-steal-an-egg.yml`, tests it and builds an Android APK.

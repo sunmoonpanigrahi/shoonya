@@ -17,6 +17,10 @@ func _ready() -> void:
 	await _shot_scene("res://scenes/main_menu.tscn", "menu", 10)
 	await _shot_scene("res://scenes/hatchery.tscn", "hatchery", 10)
 	await _shot_scene("res://scenes/pets.tscn", "pets", 10)
+	await _shot_scene("res://scenes/shop.tscn", "shop", 10)
+	if Net.host_game() == OK:
+		await _shot_scene("res://scenes/lobby.tscn", "lobby", 10)
+	Net.setup_solo()
 	await _shot_world()
 	SaveGame.use_test_profile()
 	get_tree().quit()
