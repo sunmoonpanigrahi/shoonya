@@ -149,3 +149,29 @@ func test_rival_thief_trap_and_bat() -> void:
 	check(rival.epoch > 0, "rival's position reports from before the hit are ignored")
 	Net.players.erase(2)
 	await _end(world)
+
+
+func test_pets_hatch_at_the_base_and_live_there() -> void:
+	SaveGame.use_test_profile()
+	var rng := RandomNumberGenerator.new()
+	for i in 3:
+		SaveGame.data["pets"].append(Loot.make_pet(i, "earth", rng))
+	Net.setup_solo()
+	var world: World = load("res://scenes/world.tscn").instantiate()
+	tree.root.add_child(world)
+	await frames(2)
+	check_eq(world.base_pets.size(), 3, "pets you own wander your base")
+	var pad := WorldLayout.pad_position(0)
+	check(world.base_pets.all(func(p: PetRoamer) -> bool: return p.position.distance_to(pad) < 12.0), "they stay near your pad")
+	# An egg finishes while you play: it cracks open at its incubator and the pet jumps out.
+	SaveGame.add_delivered_egg(0, "nature")
+	SaveGame.data["incubators"][0]["start"] = SaveGame.now() - 61.0
+	SaveGame.process_hatchery()
+	await frames(3)
+	check(world.get_node("Entities").get_children().any(func(n: Node) -> bool: return n is HatchEffect), "egg is hatching in the world")
+	check(await _wait_for(func() -> bool: return world.base_pets.size() == 4, 150), "new pet joined the others")
+	check_eq(world.base_pets.back().pet["element"], "nature", "it is the pet that just hatched")
+	world.queue_free()
+	await frames(1)
+	SaveGame.use_test_profile()
+

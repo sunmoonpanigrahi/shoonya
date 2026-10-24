@@ -6,6 +6,7 @@ const LOBBY_SCENE := "res://scenes/lobby.tscn"
 var _message: Label
 var _coins: Label
 var _hatching: Label
+var _index_button: Button
 
 
 func _ready() -> void:
@@ -68,11 +69,17 @@ func _ready() -> void:
 	right.add_child(UIKit.button("Join Wi-Fi game", _join, 380))
 	right.add_child(UIKit.button("Hatchery", _go.bind("res://scenes/hatchery.tscn"), 380))
 	right.add_child(UIKit.button("Pets", _go.bind("res://scenes/pets.tscn"), 380))
+	_index_button = UIKit.button("Pet Index", _go.bind("res://scenes/index.tscn"), 380)
+	right.add_child(_index_button)
 	right.add_child(UIKit.button("Shop", _go.bind("res://scenes/shop.tscn"), 380))
+	# Eggs that hatched while you were away come out now.
+	HatchReveal.show_pending(self)
 
 
 func _process(_delta: float) -> void:
 	_coins.text = UIKit.coins_text(SaveGame.data["coins"])
+	var gifts := SaveGame.claimable_gifts().size()
+	_index_button.text = "Pet Index  ·  %d gift%s!" % [gifts, "" if gifts == 1 else "s"] if gifts > 0 else "Pet Index"
 	var busy := 0
 	var soonest := INF
 	for slot in SaveGame.data["incubators"]:

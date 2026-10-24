@@ -5,7 +5,8 @@ A 3D mobile game made with [Godot 4.7](https://godotengine.org/). Steal monster 
 | | |
 |---|---|
 | ![A Nature monster caught in a trap while the thief escapes with an egg](docs/screenshots/chase.jpg) | ![Running through the Volcano at 79 billion km/h](docs/screenshots/volcano.jpg) |
-| ![Main menu](docs/screenshots/menu.jpg) | ![Hatchery with live countdowns](docs/screenshots/hatchery.jpg) |
+| ![A Legendary Ice pet popping out of its egg](docs/screenshots/hatch.jpg) | ![The Pet Index with a gift ready to claim](docs/screenshots/index.jpg) |
+| ![Hatched pets wandering around the base](docs/screenshots/base.jpg) | ![Hatchery with live countdowns](docs/screenshots/hatchery.jpg) |
 
 ## How to play
 
@@ -47,7 +48,7 @@ A 3D mobile game made with [Godot 4.7](https://godotengine.org/). Steal monster 
   | Eternal | 2 hours | 6,000 |
   | Divine | 1 day | 50,000 |
 
-- **Pets:** each egg hatches into a pet of its element. Equip one and it follows you, with a perk that gets stronger with rarity:
+- **Pets:** when an egg hatches, it cracks open and the pet pops out. You see it in the incubator if you're at your base, and as a hatching animation on the menu or Hatchery screen. Each biome and rarity hatches its own pet (for example Leafling for a Common Forest egg, Sproutle for a Rare one). Your pets wander around your base. Equip one and it follows you, with a perk that gets stronger with rarity:
 
   | Element | Perk |
   |---|---|
@@ -73,15 +74,18 @@ A 3D mobile game made with [Godot 4.7](https://godotengine.org/). Steal monster 
   | Dark | Nearly invisible until close |
   | Light | Blinding flash |
 
+- **Pet Index:** a page for each biome, with a spot for every pet you can hatch there (22 in all). Fill a page and claim its gift: three times the coins those pets gave when they hatched. Fill the whole Index for the **Champion's gift**: 100,000 coins and a golden crown your thief wears, which other players can see too.
 - **Shop:** spend coins on more incubators and bat upgrades.
 
 ### Playing together on the same Wi-Fi
 
 1. One phone taps **Host Wi-Fi game**. Everyone else on the same Wi-Fi taps **Join Wi-Fi game**.
-2. Joiners pick the host from the list. If the host doesn't show up, type the address shown on the host's screen.
-3. The host taps **Start game**. Up to 4 thieves can play.
+2. Joiners pick the host from the list. If the host doesn't show up, type the address shown on the host's screen. The game remembers the last address you typed.
+3. The host taps **Start game**. Up to 4 thieves can play. Players can also join after the game has started.
 
 Everyone hunts eggs in the same world. Trap a rival who is carrying an egg (or hit them with the bat) and the egg is yours to grab. Each player's hatchery, pets and coins are saved on their own phone.
+
+If a phone loses the connection (weak Wi-Fi, the screen turning off, switching apps), it goes to the join screen and rejoins the same game by itself. Any egg it was carrying is dropped where it was. When the host ends the game, everyone returns to the menu.
 
 ### Controls
 
@@ -97,7 +101,7 @@ Everyone hunts eggs in the same world. Trap a rival who is carrying an egg (or h
 
 | Folder | What's in it |
 |---|---|
-| `core/` | Game rules and tables with no scene code: rarities, biomes, elements, speed scale, world layout, hit tests, hatchery timers, loot |
+| `core/` | Game rules and tables with no scene code: rarities, biomes, elements, speed scale, world layout, hit tests, hatchery timers, loot, Pet Index |
 | `autoload/` | `SaveGame` (progress on this phone) and `Net` (solo, host, join, finding hosts on the Wi-Fi) |
 | `game/` | The 3D world: thief, monsters, eggs, traps, pets, camera, and the world rules (`world.gd`) |
 | `ui/` | HUD with touch controls and map, plus the menu, lobby, hatchery, pets and shop screens |

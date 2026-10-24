@@ -50,6 +50,7 @@ var _step_phase := 0.0
 var _trap_ring: MeshInstance3D
 var _stars: Node3D
 var _label: Label3D
+var _crown: Node3D
 
 
 func _init() -> void:
@@ -68,6 +69,7 @@ func setup(id: int, info: Dictionary, local: bool) -> void:
 	_label.text = display_name
 	_label.visible = not local
 	_label.modulate = color
+	_crown.visible = bool(info.get("crown", false))
 
 
 func forward() -> Vector3:
@@ -253,6 +255,17 @@ func _build() -> void:
 		var a := TAU * i / 3.0
 		Meshes.add(_stars, Meshes.sphere(0.07), Meshes.material(Color(1, 0.9, 0.2), 2.0), Vector3(cos(a) * 0.35, 0, sin(a) * 0.35))
 	_stars.visible = false
+	# The golden crown from completing the Pet Index.
+	_crown = Node3D.new()
+	_crown.position = Vector3(0, 2.08, 0)
+	_crown.visible = false
+	_body.add_child(_crown)
+	var gold := Meshes.material(Color(1.0, 0.8, 0.2), 1.2)
+	Meshes.add(_crown, Meshes.cylinder(0.2, 0.2, 0.12, 12), gold)
+	for i in 5:
+		var a := TAU * i / 5.0
+		Meshes.add(_crown, Meshes.cone(0.06, 0.18, 4), gold, Vector3(cos(a) * 0.17, 0.14, sin(a) * 0.17))
+	Meshes.add(_crown, Meshes.sphere(0.05), Meshes.material(Color(1.0, 0.2, 0.3), 1.5), Vector3(0, 0.02, -0.2))
 	_label = Label3D.new()
 	_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	_label.position = Vector3(0, 2.7, 0)

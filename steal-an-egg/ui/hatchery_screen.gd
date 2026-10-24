@@ -5,7 +5,7 @@ extends Screen
 var _content: VBoxContainer
 var _rows: Array[Dictionary] = []
 var _storage_label: Label
-var _reveal: PanelContainer
+var _reveal: HatchReveal
 
 
 func _build() -> void:
@@ -16,7 +16,7 @@ func _build() -> void:
 	_show_reveals()
 
 
-func _on_hatched(_pet: Dictionary, _coins: int) -> void:
+func _on_hatched(_pet: Dictionary, _coins: int, _slot: int) -> void:
 	_show_reveals()
 
 
@@ -89,27 +89,5 @@ func _process(delta: float) -> void:
 
 
 func _show_reveals() -> void:
-	if _reveal:
-		return
-	var reveals := SaveGame.take_reveals()
-	if reveals.is_empty():
-		return
-	_reveal = PanelContainer.new()
-	add_child(_reveal)
-	var box := VBoxContainer.new()
-	box.alignment = BoxContainer.ALIGNMENT_CENTER
-	box.add_theme_constant_override("separation", 12)
-	_reveal.add_child(box)
-	box.add_child(UIKit.label("Hatched!", 48, UIKit.ACCENT))
-	for r in reveals:
-		var pet: Dictionary = r["pet"]
-		var rarity := GameData.rarity(pet["rarity"])
-		var line := HBoxContainer.new()
-		line.add_child(EggIcon.make(GameData.element(pet["element"])["color"], true, 64))
-		line.add_child(UIKit.label("%s · %s %s pet · +%d coins" % [pet["name"], rarity["name"], GameData.element(pet["element"])["name"], r["coins"]], 26, rarity["color"]))
-		box.add_child(line)
-	box.add_child(UIKit.button("Nice!", func() -> void:
-		_reveal.queue_free()
-		_reveal = null))
-	_reveal.reset_size()
-	_reveal.position = (size - _reveal.size) * 0.5
+	if not is_instance_valid(_reveal):
+		_reveal = HatchReveal.show_pending(self)

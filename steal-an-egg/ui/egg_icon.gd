@@ -5,6 +5,8 @@ extends Control
 var color := Color.WHITE
 var is_pet := false
 var empty := false
+## Draws a question mark on top (a pet not found yet).
+var mystery := false
 
 
 static func make(icon_color: Color, pet: bool = false, icon_size: float = 72.0) -> EggIcon:
@@ -25,7 +27,10 @@ func _draw() -> void:
 	if not is_pet:
 		UIKit.draw_egg(self, c, h, color)
 		return
-	draw_circle(c + Vector2(0, h * 0.08), h * 0.38, color)
-	for side in [-1.0, 1.0]:
-		draw_colored_polygon(PackedVector2Array([c + Vector2(side * h * 0.12, -h * 0.2), c + Vector2(side * h * 0.34, -h * 0.45), c + Vector2(side * h * 0.34, -h * 0.12)]), color.darkened(0.2))
-		draw_circle(c + Vector2(side * h * 0.13, 0.02 * h), h * 0.06, Color(0.05, 0.05, 0.05))
+	if mystery:
+		draw_circle(c + Vector2(0, h * 0.1), h * 0.28, color)
+		draw_circle(c + Vector2(0, -h * 0.12), h * 0.24, color)
+	else:
+		UIKit.draw_pet(self, c, h, color)
+	if mystery:
+		draw_string(get_theme_default_font(), c + Vector2(-h * 0.5, h * 0.2), "?", HORIZONTAL_ALIGNMENT_CENTER, h, int(h * 0.55), Color(1, 1, 1, 0.6))

@@ -13,7 +13,7 @@ func test_menu_screens_open() -> void:
 	SaveGame.use_test_profile()
 	SaveGame.data["coins"] = 5000
 	SaveGame.add_delivered_egg(3, "ice")
-	for path in ["res://scenes/main_menu.tscn", "res://scenes/hatchery.tscn", "res://scenes/pets.tscn", "res://scenes/shop.tscn"]:
+	for path in ["res://scenes/main_menu.tscn", "res://scenes/hatchery.tscn", "res://scenes/pets.tscn", "res://scenes/shop.tscn", "res://scenes/index.tscn"]:
 		var scene: Node = await _open(path)
 		check(scene.is_inside_tree(), path)
 		scene.queue_free()
@@ -49,3 +49,41 @@ func test_pause_menu_and_shop_in_game() -> void:
 	world.queue_free()
 	await frames(1)
 	SaveGame.use_test_profile()
+
+
+func test_hatch_reveal_shows_each_new_pet() -> void:
+	SaveGame.use_test_profile()
+	SaveGame.add_delivered_egg(0, "nature")
+	SaveGame.add_delivered_egg(4, "fire")
+	for slot in SaveGame.data["incubators"]:
+		slot["start"] = SaveGame.now() - 4000.0
+	SaveGame.process_hatchery()
+	check_eq(SaveGame.pending_reveals.size(), 2, "two pets waiting to come out")
+	var menu: Node = await _open("res://scenes/main_menu.tscn")
+	var reveal: HatchReveal = menu.get_children().filter(func(n: Node) -> bool: return n is HatchReveal).front()
+	check(reveal != null, "main menu plays the hatch")
+	check(SaveGame.pending_reveals.is_empty(), "reveals taken")
+	check(reveal._current["new_entry"], "first pet of its kind is new in the index")
+	reveal._on_equip()
+	check_eq(SaveGame.data["equipped_pet"], reveal._current["pet"]["id"], "equip from the reveal")
+	reveal._advance()
+	reveal._advance()
+	await frames(2)
+	check(not is_instance_valid(reveal), "closes after the last pet")
+	menu.queue_free()
+	await frames(1)
+	SaveGame.use_test_profile()
+
+
+func test_index_gift_can_be_claimed() -> void:
+	SaveGame.use_test_profile()
+	SaveGame.data["index"] = {"forest:0": true, "forest:1": true}
+	var screen: IndexScreen = await _open("res://scenes/index.tscn")
+	var coins: int = SaveGame.data["coins"]
+	screen._claim("page_forest")
+	await frames(2)
+	check_eq(SaveGame.data["coins"], coins + PetIndex.page_gift_coins(0), "gift paid from the index screen")
+	screen.queue_free()
+	await frames(1)
+	SaveGame.use_test_profile()
+

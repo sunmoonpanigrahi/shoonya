@@ -3,7 +3,8 @@ extends Node
 ## Incubators hatch in real time, also while the app is closed.
 
 signal changed
-signal hatched(pet: Dictionary, coins: int)
+## A pet came out of the egg in incubator `slot`.
+signal hatched(pet: Dictionary, coins: int, slot: int)
 
 const DEFAULT_PATH := "user://save.json"
 
@@ -41,6 +42,11 @@ static func defaults() -> Dictionary:
 		"eggs_delivered": 0,
 		"eggs_hatched": 0,
 		"fast_hatch": false,
+		## Pet Index: entry key -> true once that pet has hatched.
+		"index": {},
+		## Gifts already claimed from the Pet Index.
+		"gifts": [],
+		"last_host": "",
 	}
 
 
@@ -110,10 +116,13 @@ func process_hatchery() -> void:
 		data["pets"].append(pet)
 		data["coins"] += coins
 		data["eggs_hatched"] += 1
+		var key := PetIndex.key_for_pet(pet)
+		var new_entry: bool = not data["index"].has(key)
+		data["index"][key] = true
 		if data["equipped_pet"] == "":
 			data["equipped_pet"] = pet["id"]
-		pending_reveals.append({"pet": pet, "coins": coins})
-		hatched.emit(pet, coins)
+		pending_reveals.append({"pet": pet, "coins": coins, "new_entry": new_entry})
+		hatched.emit(pet, coins, int(egg.get("slot", -1)))
 	save_game()
 
 
@@ -121,6 +130,27 @@ func take_reveals() -> Array[Dictionary]:
 	var out := pending_reveals.duplicate()
 	pending_reveals.clear()
 	return out
+
+
+## Pet Index gifts that are ready to claim.
+func claimable_gifts() -> Array[Dictionary]:
+	return PetIndex.claimable_gifts(data["index"], data["gifts"])
+
+
+## Claims a Pet Index gift. Returns the gift, or an empty Dictionary if it isn't ready.
+func claim_gift(gift_id: String) -> Dictionary:
+	for gift in claimable_gifts():
+		if gift["id"] == gift_id:
+			data["coins"] += int(gift["coins"])
+			data["gifts"].append(gift_id)
+			save_game()
+			return gift
+	return {}
+
+
+## The golden crown from completing the Pet Index.
+func has_crown() -> bool:
+	return data["gifts"].has(PetIndex.CHAMPION_GIFT)
 
 
 func equipped_pet() -> Dictionary:
@@ -178,6 +208,7 @@ func player_info() -> Dictionary:
 		"pet_name": pet.get("name", ""),
 		"pet_element": pet.get("element", ""),
 		"pet_rarity": int(pet.get("rarity", 0)),
+		"crown": has_crown(),
 	}
 
 
@@ -197,4 +228,11 @@ func _normalise() -> void:
 		egg["rarity"] = int(egg["rarity"])
 	for pet in data["pets"]:
 		pet["rarity"] = int(pet["rarity"])
+	if not data["index"] is Dictionary:
+		data["index"] = {}
+	if not data["gifts"] is Array:
+		data["gifts"] = []
+	# Pets hatched before the Pet Index existed still count.
+	for pet in data["pets"]:
+		data["index"][PetIndex.key_for_pet(pet)] = true
 	Hatchery.resize(data["incubators"], incubator_slots())

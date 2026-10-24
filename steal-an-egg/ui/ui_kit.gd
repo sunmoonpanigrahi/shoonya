@@ -124,5 +124,34 @@ static func draw_egg(canvas: CanvasItem, center: Vector2, height: float, color: 
 	canvas.draw_circle(center + Vector2(-0.2, -0.22) * height, height * 0.09, Color(1, 1, 1, 0.5))
 
 
+## A pet's face and body drawn in 2D, `height` tall, centred on `center`.
+static func draw_pet(canvas: CanvasItem, center: Vector2, height: float, color: Color, rarity_index: int = 0) -> void:
+	# Tiny shapes (the first frames of a pop-in) can't be drawn as polygons.
+	if height < 8.0:
+		return
+	var h := height
+	var dark := color.darkened(0.3)
+	# Ears first so the head covers their base.
+	for side in [-1.0, 1.0]:
+		canvas.draw_colored_polygon(PackedVector2Array([
+			center + Vector2(side * h * 0.12, -h * 0.28), center + Vector2(side * h * 0.36, -h * 0.5),
+			center + Vector2(side * h * 0.33, -h * 0.16)]), dark)
+	canvas.draw_circle(center + Vector2(0, h * 0.2), h * 0.3, color)
+	canvas.draw_circle(center + Vector2(0, h * 0.24), h * 0.19, color.lightened(0.45))
+	canvas.draw_circle(center + Vector2(0, -h * 0.1), h * 0.28, color)
+	for side in [-1.0, 1.0]:
+		var eye := center + Vector2(side * h * 0.11, -h * 0.12)
+		canvas.draw_circle(eye, h * 0.075, Color.WHITE)
+		canvas.draw_circle(eye + Vector2(0, h * 0.01), h * 0.045, Color(0.05, 0.05, 0.08))
+		canvas.draw_circle(eye + Vector2(-h * 0.015, -h * 0.015), h * 0.015, Color.WHITE)
+		canvas.draw_circle(center + Vector2(side * h * 0.2, -h * 0.02), h * 0.035, Color(1.0, 0.55, 0.6, 0.8))
+		canvas.draw_circle(center + Vector2(side * h * 0.14, h * 0.48), h * 0.07, dark)
+	canvas.draw_arc(center + Vector2(0, -h * 0.03), h * 0.05, 0.3, PI - 0.3, 10, Color(0.1, 0.05, 0.05), maxf(h * 0.012, 1.5), true)
+	if rarity_index >= 5:
+		for i in 4:
+			var a := TAU * i / 4.0 + float(Time.get_ticks_msec()) / 700.0
+			canvas.draw_circle(center + Vector2(cos(a) * h * 0.5, sin(a) * h * 0.35), h * 0.025, Color(1, 1, 0.8))
+
+
 static func coins_text(coins: int) -> String:
 	return "%s coins" % SpeedScale._group_thousands(coins)

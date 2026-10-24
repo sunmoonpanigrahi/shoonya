@@ -30,6 +30,8 @@ var lost_egg_id := -1
 var _env: WorldEnvironment
 var _entities: Node3D
 var _incubator_pods: Array[MeshInstance3D] = []
+## Hatched pets wandering around the local player's pad.
+var base_pets: Array[PetRoamer] = []
 var _rng := RandomNumberGenerator.new()
 var _next_id := 1
 var _snapshot_timer := 0.0
@@ -70,6 +72,8 @@ func _ready() -> void:
 	hud.setup(self)
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 	Net.player_joined.connect(_on_player_joined)
+	SaveGame.hatched.connect(_on_pet_hatched)
+	_spawn_base_pets()
 	if multiplayer.is_server():
 		for peer in Net.players:
 			_add_player(peer)
@@ -465,6 +469,42 @@ func _place_carried_eggs() -> void:
 	for egg in eggs:
 		if egg.state == Egg.State.CARRIED and thieves.has(egg.carrier):
 			egg.position = thieves[egg.carrier].egg_anchor()
+
+
+## Your pets live at your base: the rarest and newest ones wander around your pad.
+func _spawn_base_pets() -> void:
+	var pets: Array = SaveGame.data["pets"].duplicate()
+	pets.reverse()
+	pets.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(a["rarity"]) > int(b["rarity"]))
+	var pad := WorldLayout.pad_position(Net.player_index(Net.my_id()))
+	for pet in pets.slice(0, GameData.BASE_PETS_SHOWN):
+		var angle := randf() * TAU
+		_add_base_pet(pet, pad + Vector3(cos(angle), 0, sin(angle)) * randf_range(6.0, 10.0))
+
+
+func _add_base_pet(pet: Dictionary, at: Vector3) -> PetRoamer:
+	var roamer := PetRoamer.new()
+	_entities.add_child(roamer)
+	roamer.setup(pet, WorldLayout.pad_position(Net.player_index(Net.my_id())), at)
+	_track_base_pet(roamer)
+	return roamer
+
+
+func _track_base_pet(roamer: PetRoamer) -> void:
+	base_pets.append(roamer)
+	while base_pets.size() > GameData.BASE_PETS_SHOWN:
+		base_pets.pop_front().queue_free()
+
+
+## An egg in one of your incubators hatched: it cracks open there and the pet jumps out.
+func _on_pet_hatched(pet: Dictionary, _coins: int, slot: int) -> void:
+	var at := WorldLayout.pad_position(Net.player_index(Net.my_id()))
+	if slot >= 0 and slot < _incubator_pods.size():
+		at = _incubator_pods[slot].position - Vector3(0, 1.1, 0)
+	var effect := HatchEffect.new()
+	_entities.add_child(effect)
+	effect.setup(pet, at, WorldLayout.pad_position(Net.player_index(Net.my_id())))
+	effect.hatched.connect(_track_base_pet)
 
 
 func _update_incubator_pods() -> void:

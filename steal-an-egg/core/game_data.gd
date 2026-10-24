@@ -96,6 +96,9 @@ const CATCH_RADIUS := 1.6
 const PICKUP_RADIUS := 2.5
 const FALL_SECONDS := 1.4
 
+## Hatched pets wandering around your base pad.
+const BASE_PETS_SHOWN := 12
+
 const START_INCUBATORS := 2
 const MAX_INCUBATORS := 6
 const MAX_STORAGE := 10
@@ -103,6 +106,11 @@ const MAX_STORAGE := 10
 const INCUBATOR_COSTS: Array[int] = [100, 400, 1500, 6000]
 ## Coins for bat levels 1..5.
 const BAT_COSTS: Array[int] = [150, 600, 2500, 10000, 40000]
+## Pet Index gifts: a full biome page pays this many times its pets' hatch coins;
+## the full index pays the Champion coins and a golden crown for your thief.
+const INDEX_PAGE_GIFT_MULTIPLIER := 3
+const INDEX_CHAMPION_COINS := 100000
+
 const BAT_STUN_PER_LEVEL := 0.25
 const BAT_COOLDOWN_PER_LEVEL := 0.08
 

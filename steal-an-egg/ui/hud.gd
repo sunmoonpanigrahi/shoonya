@@ -18,6 +18,8 @@ var _center_label: Label
 var _toasts: VBoxContainer
 var _menu: Control
 var _overlay_screen: Control
+var _reveal: HatchReveal
+var _root: Control
 var _speed_lines_seed := 0
 
 
@@ -29,6 +31,7 @@ func setup(owner_world: World) -> void:
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.theme = UIKit.theme()
 	add_child(root)
+	_root = root
 
 	_effects = Control.new()
 	_effects.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -106,7 +109,7 @@ func toast(text: String, color: Color) -> void:
 	tween.tween_callback(l.queue_free)
 
 
-func _on_hatched(pet: Dictionary, coins: int) -> void:
+func _on_hatched(pet: Dictionary, coins: int, _slot: int) -> void:
 	var rarity: Dictionary = GameData.rarity(pet["rarity"])
 	toast("Your %s egg hatched: %s! +%d coins" % [rarity["name"], pet["name"], coins], rarity["color"])
 
@@ -140,6 +143,13 @@ func _process(_delta: float) -> void:
 		_center_label.text = ""
 	_objective.queue_redraw()
 	_effects.queue_redraw()
+	# Pets that hatched come out to greet you when you get back to the base.
+	if ring == 0 and _menu == null and not is_instance_valid(_reveal) and not SaveGame.pending_reveals.is_empty() \
+			and world.carried_egg(t.peer_id) == null:
+		_reveal = HatchReveal.show_pending(_root)
+		if _reveal:
+			controls.visible = false
+			_reveal.finished.connect(func() -> void: controls.visible = _menu == null)
 
 
 ## Where to go next: home with an egg, back to a lost egg, or to the nearest egg.
@@ -227,6 +237,7 @@ func _open_menu() -> void:
 	box.add_child(UIKit.button("Resume", _close_menu))
 	box.add_child(UIKit.button("Hatchery", _open_screen.bind(HatcheryScreen)))
 	box.add_child(UIKit.button("Pets", _open_screen.bind(PetsScreen)))
+	box.add_child(UIKit.button("Pet Index", _open_screen.bind(IndexScreen)))
 	box.add_child(UIKit.button("Shop", _open_screen.bind(ShopScreen)))
 	box.add_child(UIKit.button("Leave game", func() -> void: Net.leave()))
 	_menu.reset_size()

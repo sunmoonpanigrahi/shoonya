@@ -39,10 +39,9 @@ static func nest_refill_seconds(biome_index: int) -> float:
 
 
 static func make_pet(rarity_index: int, element_id: String, rng: RandomNumberGenerator) -> Dictionary:
-	var names: Array = GameData.element(element_id)["pet_names"]
 	return {
 		"id": "pet_%d_%d" % [Time.get_ticks_usec(), rng.randi()],
-		"name": names[rng.randi() % names.size()],
+		"name": PetIndex.species_name(GameData.biome_of_element(element_id), rarity_index),
 		"element": element_id,
 		"rarity": rarity_index,
 	}

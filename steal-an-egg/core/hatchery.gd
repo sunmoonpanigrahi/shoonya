@@ -57,7 +57,7 @@ static func collect_ready(incubators: Array, storage: Array, now: float, time_sc
 			var done_at := float(slot["start"]) + float(slot["duration"])
 			if done_at > now:
 				continue
-			hatched.append({"rarity": slot["rarity"], "element": slot["element"], "hatched_at": done_at})
+			hatched.append({"rarity": slot["rarity"], "element": slot["element"], "hatched_at": done_at, "slot": i})
 			incubators[i] = {}
 			if not storage.is_empty():
 				incubators[i] = _start(storage.pop_front(), done_at, time_scale)
