@@ -1,0 +1,7 @@
+# Godot editor cache and build output
+.godot/
+/build/
+*.apk
+*.aab
+*.keystore
+export_credentials.cfg

@@ -1,0 +1,36 @@
+; Engine configuration file.
+; Edit through the Godot editor's Project Settings, or by hand.
+
+config_version=5
+
+[application]
+
+config/name="Steal an Egg"
+config/description="Steal monster eggs across eight elemental biomes, outrun or trap the monsters, and hatch the eggs at your base."
+config/version="0.1.0"
+run/main_scene="res://scenes/main_menu.tscn"
+config/features=PackedStringArray("4.7", "Mobile")
+config/icon="res://icon.svg"
+
+[autoload]
+
+SaveGame="*res://autoload/save_game.gd"
+Net="*res://autoload/net.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=0
+
+[input_devices]
+
+pointing/emulate_touch_from_mouse=true
+
+[rendering]
+
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"
+textures/vram_compression/import_etc2_astc=true
